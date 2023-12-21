@@ -49,7 +49,7 @@ resource "aws_lambda_function" "test_lambda" {
 
   environment {
     variables = {
-      foo = "foo"
+      foo = "bar"
     }
   }
 }
