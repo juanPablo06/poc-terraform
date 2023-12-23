@@ -64,7 +64,7 @@ resource "aws_iam_role" "iam_for_lambda" {
         {
           Action   = ["kms:Decrypt"]
           Effect   = "Allow"
-          Resource = data.aws_caller_identity.current.account_id
+          Resource = "*"
         },
       ]
     })
