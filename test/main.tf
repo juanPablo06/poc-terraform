@@ -37,16 +37,43 @@ data "aws_iam_policy_document" "assume_role" {
       identifiers = ["lambda.amazonaws.com"]
     }
 
-    actions = [
-      "sts:AssumeRole",
-      "sqs:SendMessage"
-    ]
+    actions = ["sts:AssumeRole"]
   }
 }
 
 resource "aws_iam_role" "iam_for_lambda" {
   name               = "iam_for_lambda"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
+
+  inline_policy {
+    name = "lambda_policy"
+
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+          Effect   = "Allow"
+          Resource = "arn:aws:logs:*:*:*"
+        },
+        {
+          Action   = ["sqs:SendMessage"]
+          Effect   = "Allow"
+          Resource = aws_sqs_queue.test_lambda_dl_queue.arn
+        },
+        {
+          Action   = ["kms:Decrypt"]
+          Effect   = "Allow"
+          Resource = "*"
+        },
+        {
+          Action   = ["ec2:CreateNetworkInterface", "ec2:DescribeNetworkInterfaces", "ec2:DeleteNetworkInterface"]
+          Effect   = "Allow"
+          Resource = "*"
+        }
+      ]
+    })
+  }
 }
 
 data "archive_file" "lambda" {
@@ -57,6 +84,9 @@ data "archive_file" "lambda" {
 
 resource "aws_sqs_queue" "test_lambda_dl_queue" {
   name = "test_lambda_dl_queue"
+
+  kms_master_key_id                 = "alias/aws/sqs"
+  kms_data_key_reuse_period_seconds = 300
 }
 
 resource "aws_signer_signing_profile" "default" {
@@ -92,7 +122,7 @@ resource "aws_lambda_function" "test_lambda" {
 
   runtime = "nodejs18.x"
 
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = -1
 
   dead_letter_config {
     target_arn = aws_sqs_queue.test_lambda_dl_queue.arn
