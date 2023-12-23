@@ -57,6 +57,9 @@ data "archive_file" "lambda" {
 
 resource "aws_sqs_queue" "test_lambda_dl_queue" {
   name = "test_lambda_dl_queue"
+
+  kms_master_key_id                 = "alias/aws/sqs"
+  kms_data_key_reuse_period_seconds = 300
 }
 
 resource "aws_signer_signing_profile" "default" {
