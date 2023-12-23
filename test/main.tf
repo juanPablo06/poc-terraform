@@ -37,16 +37,38 @@ data "aws_iam_policy_document" "assume_role" {
       identifiers = ["lambda.amazonaws.com"]
     }
 
-    actions = [
-      "sts:AssumeRole",
-      "sqs:SendMessage"
-    ]
+    actions = ["sts:AssumeRole"]
   }
 }
 
 resource "aws_iam_role" "iam_for_lambda" {
   name               = "iam_for_lambda"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
+
+  inline_policy {
+    name = "lambda_policy"
+
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+          Effect   = "Allow"
+          Resource = "arn:aws:logs:*:*:*"
+        },
+        {
+          Action   = ["sqs:SendMessage"]
+          Effect   = "Allow"
+          Resource = aws_sqs_queue.test_lambda_dl_queue.arn
+        },
+        {
+          Action   = ["kms:Decrypt"]
+          Effect   = "Allow"
+          Resource = data.aws_caller_identity.current.account_id
+        },
+      ]
+    })
+  }
 }
 
 data "archive_file" "lambda" {
