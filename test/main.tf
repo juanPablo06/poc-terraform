@@ -66,6 +66,11 @@ resource "aws_iam_role" "iam_for_lambda" {
           Effect   = "Allow"
           Resource = "*"
         },
+        {
+          Action   = ["ec2:CreateNetworkInterface", "ec2:DescribeNetworkInterfaces", "ec2:DeleteNetworkInterface"]
+          Effect   = "Allow"
+          Resource = "*"
+        }
       ]
     })
   }
@@ -117,7 +122,7 @@ resource "aws_lambda_function" "test_lambda" {
 
   runtime = "nodejs18.x"
 
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = -1
 
   dead_letter_config {
     target_arn = aws_sqs_queue.test_lambda_dl_queue.arn
