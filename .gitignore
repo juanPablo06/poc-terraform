@@ -35,3 +35,8 @@ terraform.rc
 
 # Ignore lock files
 *.hcl
+
+**/.infracost/*
+
+lambda_function_payload.zip
+```
